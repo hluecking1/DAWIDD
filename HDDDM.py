@@ -5,6 +5,7 @@ from scipy.stats import t
 
 from kernel_two_sample_test import kernel_two_sample_test, MMD2u
 from sklearn.metrics import pairwise_distances, pairwise_kernels
+
 def test_independence_k2st(X, Y, alpha=0.005):
     sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
     _, _, p_value = kernel_two_sample_test(X, Y, kernel_function='rbf', gamma=1.0/sigma2, verbose=False)

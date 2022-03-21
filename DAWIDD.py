@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from svm_test import test_independence as svm_independence_test
-
+from kernel_two_sample_test import kernel_two_sample_test
+from sklearn.metrics import pairwise_distances
 
 def test_independence(X, Y, Z=None):
     return svm_independence_test(X, Y)
@@ -26,12 +27,11 @@ class DAWIDD():
 
         The default is 0.001
     """
-    def __init__(self, max_window_size=90, min_window_size=70, min_p_value=0.001):
+    def __init__(self, X, max_window_size=90, min_window_size=70, min_p_value=0.001):
         self.max_window_size = max_window_size
         self.min_window_size = min_window_size
         self.min_p_value = min_p_value
-
-        self.X = []
+        self.X_baseline = X
         self.n_items = 0
         self.min_n_items = self.min_window_size / 4.
 
@@ -47,6 +47,12 @@ class DAWIDD():
         X_ = X[:,:-1].reshape(X.shape[0], -1)
         Y = X[:, -1].reshape(-1, 1)
         return test_independence(X_, Y.ravel())
+    
+    def test_independence_k2st(self, X, Y, alpha=0.005):
+        sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
+        _, _, p_value = kernel_two_sample_test(X, Y, kernel_function='rbf', gamma=1.0/sigma2, verbose=False)
+
+        return True if p_value <= alpha else False
 
     def set_input(self, x):
         self.add_batch(x)
@@ -57,7 +63,7 @@ class DAWIDD():
         self.drift_detected = False
 
         # Add item
-        self.X.append(x.flatten())
+        self.X_baseline.append(x.flatten())
         self.n_items += 1
         
         # Is buffer full?
@@ -68,7 +74,7 @@ class DAWIDD():
         # Enough items for testing for drift?
         if self.n_items >= self.min_window_size:
             # Test for drift
-            p = self._test_for_independence()
+            p = self.test_independence_k2st(self.X_baseline, x)
 
             if p <= self.min_p_value:
                 self.drift_detected = True
@@ -76,7 +82,7 @@ class DAWIDD():
                 # Remove samples until no drift is present!
                 while p <= self.min_p_value and self.n_items >= self.min_n_items:
                     # Remove old samples
-                    self.X.pop(0)
+                    self.X_baseline.pop(0)
                     self.n_items -= 1
 
 

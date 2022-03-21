@@ -383,7 +383,7 @@ class DriftDetectorUnsupervised():
             if end_idx >= n_data_stream_samples:
                 end_idx = n_data_stream_samples
 
-            batch = data_stream[t:end_idx, :]
+            batch = np.array(data_stream)[t:end_idx, :]
             self.drift_detector.add_batch(batch)
 
             if self.drift_detector.detected_change():
