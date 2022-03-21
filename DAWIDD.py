@@ -62,13 +62,11 @@ class DAWIDD():
     def add_batch(self, x):
         self.drift_detected = False
 
-        # Add item
-        self.X_baseline.append(x.flatten())
         self.n_items += 1
         
         # Is buffer full?
         if self.n_items > self.max_window_size:
-            self.X.pop(0)
+            self.X_baseline.pop(0)
             self.n_items -= 1
 
         # Enough items for testing for drift?
