@@ -3,6 +3,11 @@ import numpy as np
 from svm_test import test_independence as svm_independence_test
 from kernel_two_sample_test import kernel_two_sample_test
 from sklearn.metrics import pairwise_distances
+import sys
+import os
+curr_folder = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(curr_folder + "/HSIC")
+from HSIC import hsic_gam
 
 def test_independence(X, Y, Z=None):
     return svm_independence_test(X, Y)
@@ -27,7 +32,7 @@ class DAWIDD():
 
         The default is 0.001
     """
-    def __init__(self, X, max_window_size=70, min_window_size=90, min_p_value=0.001):
+    def __init__(self, X, max_window_size=90, min_window_size=70, min_p_value=0.001):
         self.max_window_size = max_window_size
         self.min_window_size = min_window_size
         self.min_p_value = min_p_value
@@ -39,7 +44,6 @@ class DAWIDD():
     
     # You have to overwrite this function if you want to use a different test for independence
     def _test_for_independence(self):
-        #TODO: Debug this function. What is compared?
         t = np.array(range(self.n_items)) / (1. * self.n_items)
         t /= np.std(t)
         t = t.reshape(-1, 1)
@@ -47,7 +51,7 @@ class DAWIDD():
         X = np.array(self.X)
         X_ = X[:,:-1].reshape(X.shape[0], -1)
         Y = X[:, -1].reshape(-1, 1)
-        return test_independence_hsic(X_, Y.ravel())
+        return test_independence(X_, Y.ravel())
     
     def test_independence_k2st(self, X, Y, alpha=0.005):
         sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
@@ -55,6 +59,10 @@ class DAWIDD():
 
         return True if p_value <= alpha else False
 
+    def test_independence_hsic(self, X, Y, alpha=0.005):
+        testStat, _  = hsic_gam(X, Y, alph = 0.05)
+        return testStat
+    
     def set_input(self, x):
         self.add_batch(x)
 
@@ -62,9 +70,9 @@ class DAWIDD():
 
     def add_batch(self, x):
         self.drift_detected = False
+
         self.n_items += 1
-        # When batch size is 1 we need to flatten
-        self.X_baseline.append(x.flatten())
+        
         # Is buffer full?
         if self.n_items > self.max_window_size:
             self.X_baseline.pop(0)
@@ -73,7 +81,7 @@ class DAWIDD():
         # Enough items for testing for drift?
         if self.n_items >= self.min_window_size:
             # Test for drift
-            p = self._test_for_independence(self.X_baseline, x)
+            p = self.test_independence_hsic(self.X_baseline, x)
 
             if p <= self.min_p_value:
                 self.drift_detected = True
