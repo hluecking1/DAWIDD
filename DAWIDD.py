@@ -51,7 +51,7 @@ class DAWIDD():
         X = np.array(random.sample(self.X_baseline[:-self.n_items], self.n_items))
         # The data in the current window will be chosen for Y
         Y = np.array(self.X_baseline[-self.n_items:])
-        return test_independence_hsic(X, Y)
+        return self.test_independence_hsic(X, Y)
     
     def test_independence_k2st(self, X, Y, alpha=0.005):
         sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
