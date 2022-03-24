@@ -48,10 +48,10 @@ class DAWIDD():
         t /= np.std(t)
         t = t.reshape(-1, 1)
 
-        X = np.array(self.X)
+        X = np.array(self.X_baseline)
         X_ = X[:,:-1].reshape(X.shape[0], -1)
         Y = X[:, -1].reshape(-1, 1)
-        return test_independence(X_, Y.ravel())
+        return test_independence_hsic(X_, Y.ravel())
     
     def test_independence_k2st(self, X, Y, alpha=0.005):
         sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
@@ -65,12 +65,11 @@ class DAWIDD():
     
     def set_input(self, x):
         self.add_batch(x)
-
         return self.detected_change()
 
     def add_batch(self, x):
         self.drift_detected = False
-
+        self.X_baseline.append(x.flatten())
         self.n_items += 1
         
         # Is buffer full?
@@ -81,7 +80,7 @@ class DAWIDD():
         # Enough items for testing for drift?
         if self.n_items >= self.min_window_size:
             # Test for drift
-            p = self.test_independence_hsic(self.X_baseline, x)
+            p = self._test_for_independence()
 
             if p <= self.min_p_value:
                 self.drift_detected = True
