@@ -8,6 +8,7 @@ import os
 curr_folder = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(curr_folder + "/HSIC")
 from HSIC import hsic_gam
+import random
 
 def test_independence(X, Y, Z=None):
     return svm_independence_test(X, Y)
@@ -44,14 +45,13 @@ class DAWIDD():
     
     # You have to overwrite this function if you want to use a different test for independence
     def _test_for_independence(self):
-        t = np.array(range(self.n_items)) / (1. * self.n_items)
-        t /= np.std(t)
-        t = t.reshape(-1, 1)
+        # Tests against random samples from the current baseline and the new incoming data
 
-        X = np.array(self.X_baseline)
-        X_ = X[:,:-1].reshape(X.shape[0], -1)
-        Y = X[:, -1].reshape(-1, 1)
-        return test_independence_hsic(X_, Y.ravel())
+        # Taking n_items random samples from our baseline dataset which does not include the new data yet
+        X = np.array(random.sample(self.X_baseline[:-self.n_items], self.n_items))
+        # The data in the current window will be chosen for Y
+        Y = np.array(self.X_baseline[-self.n_items:])
+        return test_independence_hsic(X, Y)
     
     def test_independence_k2st(self, X, Y, alpha=0.005):
         sigma2 = np.median(pairwise_distances(X, Y, metric='euclidean'))**2
