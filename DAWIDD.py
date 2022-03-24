@@ -62,9 +62,9 @@ class DAWIDD():
 
     def add_batch(self, x):
         self.drift_detected = False
-        # Set batch size to 1 again
         self.n_items += 1
-        self.X_baseline.append(x)
+        # When batch size is 1 we need to flatten
+        self.X_baseline.append(x.flatten())
         # Is buffer full?
         if self.n_items > self.max_window_size:
             self.X_baseline.pop(0)
