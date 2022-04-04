@@ -1,0 +1,3 @@
+[submodule "HSIC"]
+	path = HSIC
+	url = https://github.com/amber0309/HSIC.git
