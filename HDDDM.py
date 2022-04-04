@@ -31,30 +31,34 @@ def compute_hellinger_dist(P, Q):
 
 # Hellinger Distance Drift Detection Method
 class HDDDM():
-    def __init__(self, X, gamma=1., alpha=None, use_mmd2=False, use_k2s_test=False):
+    def __init__(self, vecwords, gamma=1., alpha=None, use_mmd2=False, use_k2s_test=False):
         if gamma is None and alpha is None:
             raise ValueError("Gamma and alpha can not be None at the same time! Please specify either gamma or alpha")
 
         self.drift_detected = False
         self.use_mmd2 = use_mmd2
         self.use_k2s_test = use_k2s_test
-
+        X = np.array(list(vecwords.values()))
+        Y = np.array(list(vecwords.keys()))
+        self.vecwords_baseline = vecwords
         self.gamma = gamma
         self.alpha = alpha
         self.n_bins = int(np.floor(np.sqrt(X.shape[0])))
 
         # Initialization
         self.X_baseline = X
+        self.Y_baseline = Y
         self.hist_baseline = compute_histogram(X, self.n_bins)
-        self.n_samples = X.shape[0]
+        self.n_samples = self.X.shape[0]
         self.dist_old = 0.
         self.epsilons = []
         self.t_denom = 0
 
-    def add_batch(self, X):
+    def add_batch(self, vecwords):
         self.t_denom += 1
         self.drift_detected = False
-
+        X = np.array(list(vecwords.values()))
+        Y = np.array(list(vecwords.keys()))
         # Compute histogram and the Hellinger distance to the baseline histogram
         hist = compute_histogram(X, self.n_bins)
         dist = compute_hellinger_dist(self.hist_baseline, hist)
@@ -88,11 +92,25 @@ class HDDDM():
             self.n_bins = int(np.floor(np.sqrt(n_samples)))
             self.hist_baseline = compute_histogram(X, self.n_bins)
             self.n_samples = n_samples
+            
             self.X_baseline = X
         else:
             self.hist_baseline += hist
             self.n_samples += n_samples
-            self.X_baseline = np.vstack((self.X_baseline, X))
+            
+            
+            # Substituting new vector assignments of keywords with old ones. We don't want multiple assignments of words
+            # For every keyword in batch
+            for keyword in Y:
+                # Either replace or append it to our vecwords baseline model
+                self.vecwords_baseline[keyword] = vecwords[keyword]
+
+            # Set our X and Y baselines        
+            self.X_baseline = np.array(list(self.vecwords_baseline.values()))
+            self.Y_baseline = np.array(list(self.vecwords_baseline.keys()))
+
+            
+            
     
     def detected_change(self):
         return self.drift_detected
