@@ -5,6 +5,7 @@ from skmultiflow.drift_detection.base_drift_detector import BaseDriftDetector
 from skmultiflow.data import STAGGERGenerator, RandomRBFGenerator, SEAGenerator
 from sklearn.datasets import make_blobs
 from sklearn.utils import shuffle
+import itertools
 
 
 # Blinking X
@@ -383,7 +384,7 @@ class DriftDetectorUnsupervised():
             if end_idx >= n_data_stream_samples:
                 end_idx = n_data_stream_samples
 
-            batch = np.array(data_stream)[t:end_idx, :]
+            batch = dict(itertools.islice(data_stream.items(), t ,end_idx))
             self.drift_detector.add_batch(batch)
 
             if self.drift_detector.detected_change():
