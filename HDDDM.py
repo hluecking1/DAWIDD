@@ -49,7 +49,7 @@ class HDDDM():
         self.X_baseline = X
         self.Y_baseline = Y
         self.hist_baseline = compute_histogram(X, self.n_bins)
-        self.n_samples = self.X.shape[0]
+        self.n_samples = len(X)
         self.dist_old = 0.
         self.epsilons = []
         self.t_denom = 0
@@ -64,7 +64,7 @@ class HDDDM():
         dist = compute_hellinger_dist(self.hist_baseline, hist)
         if self.use_mmd2:
             dist = compute_mmd2u(self.X_baseline, X)
-        n_samples = X.shape[0]
+        n_samples = len(X)
 
         # Compute test statistic
         eps = dist - self.dist_old
